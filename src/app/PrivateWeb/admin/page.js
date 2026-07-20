@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { API_URL } from "@/lib/config";
+import { apiFetch } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import PrivateHeader from "@/components/PrivateHeader";
 import { HiUsers, HiClock, HiCheckCircle, HiXCircle, HiSearch, HiPrinter, HiChevronDown, HiTrendingUp, HiExclamation, HiEye, HiCheck, HiX, HiSave } from "react-icons/hi";
@@ -58,9 +60,8 @@ export default function AdminDashboard() {
         
         // Health check sebelum fetch data utama
         try {
-          const healthCheck = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/health`, {
+          const healthCheck = await apiFetch('/api/health', {
             method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
           });
           if (!healthCheck.ok) {
             throw new Error('Backend server is not responding properly');
@@ -72,11 +73,7 @@ export default function AdminDashboard() {
         }
 
         // Fetch data santri
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pendaftaran/santri`, {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
+        const response = await apiFetch('/api/pendaftaran/santri');
         console.log('Response status:', response.status);
 
         if (!response.ok) {
@@ -179,11 +176,8 @@ export default function AdminDashboard() {
     
 // Validasi status baru
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pendaftaran/santri/${id}/status`, {
+      const response = await apiFetch(`/api/pendaftaran/santri/${id}/status`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           status: newStatus,
         }),

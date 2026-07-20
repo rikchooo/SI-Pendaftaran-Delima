@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { API_URL } from "@/lib/config";
+import { apiFetch } from "@/lib/api";
 
 const initialFormData = {
   namaLengkap: '',
@@ -214,11 +216,8 @@ export default function PendaftaranSantri() {
         }
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pendaftaran/santri`, {
+      const response = await apiFetch(`/api/pendaftaran/santri`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           email: userEmail,
           ...formData,

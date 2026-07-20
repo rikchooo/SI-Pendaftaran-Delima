@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { API_URL } from "@/lib/config";
+import { apiFetch } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import PrivateHeader from "@/components/PrivateHeader";
 import {
@@ -36,22 +38,12 @@ export default function PengasuhDashboard() {
           return;
         }
 
-        const regResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/pendaftaran/santri`,
-          {
-            headers: { "Content-Type": "application/json" },
-          },
-        );
+        const regResponse = await apiFetch('/api/pendaftaran/santri');
         if (!regResponse.ok)
           throw new Error("Failed to fetch registration data");
         const regResult = await regResponse.json();
 
-        const payResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/pembayaran`,
-          {
-            headers: { "Content-Type": "application/json" },
-          },
-        );
+        const payResponse = await apiFetch('/api/pembayaran');
         if (!payResponse.ok) throw new Error("Failed to fetch payment data");
         const payResult = await payResponse.json();
 

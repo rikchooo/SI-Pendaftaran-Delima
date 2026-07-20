@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { API_URL } from "@/lib/config";
+import { apiFetch } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import "@/styles/globals.css";
@@ -31,9 +33,7 @@ export default function LaporanPage() {
         }
 
         // Fetch data santri yang diterima
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/pendaftaran/santri`
-        );
+        const res = await apiFetch('/api/pendaftaran/santri');
         const result = await res.json();
 
         // Filter dan format data santri yang diterima

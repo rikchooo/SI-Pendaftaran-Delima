@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { API_URL } from "@/lib/config";
 import { useRouter } from "next/navigation";
 import '@/styles/globals.css';
 import PrivateHeader from "@/components/PrivateHeader";
@@ -32,16 +33,8 @@ export default function PengujiDashboard() {
         }
 
 const [santriResponse, nilaiResponse] = await Promise.all([
-           fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pendaftaran/santri`, {
-             headers: {
-               'Content-Type': 'application/json',
-             },
-           }),
-           fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pengujian/santri`, {
-             headers: {
-               'Content-Type': 'application/json',
-             },
-           })
+           apiFetch('/api/pendaftaran/santri'),
+           apiFetch('/api/pengujian/santri')
          ]);
 
         if (!santriResponse.ok) {

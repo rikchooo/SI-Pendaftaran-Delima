@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { API_URL } from "@/lib/config";
+import { apiFetch } from "@/lib/api";
 import { useRouter, useParams } from "next/navigation";
 import PrivateHeader from "@/components/PrivateHeader";
 
@@ -34,10 +36,7 @@ export default function SantriDetail() {
         setAuthChecked(true);
 
         // Fetch data santri dari backend
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pendaftaran/santri/${params.id}`, {
-          headers: {
-            'Content-Type': 'application/json',
-          },
+        const response = await apiFetch(`/api/pendaftaran/santri/${params.id}`, {
         });
 
         if (!response.ok) {

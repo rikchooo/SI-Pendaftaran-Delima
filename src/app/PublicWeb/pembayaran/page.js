@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { API_URL } from "@/lib/config";
+import { apiFetch } from "@/lib/api";
 import {
   HiStatusOnline,
   HiCheck,
@@ -36,9 +38,7 @@ export default function PembayaranPage() {
 
         const fetchPaymentStatus = async () => {
           try {
-            const response = await fetch(
-              `${process.env.NEXT_PUBLIC_API_URL}/api/pendaftaran/status/${encodeURIComponent(email)}`,
-            );
+            const response = await apiFetch(`/api/pendaftaran/status/${encodeURIComponent(email)}`);
             if (response.ok) {
               const data = await response.json();
               const backendStatus = data.payment_status || "";
@@ -159,11 +159,8 @@ export default function PembayaranPage() {
       }
 
       // Kirim ke backend
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pembayaran`, {
+      const response = await apiFetch(`/api/pembayaran`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({
           email: userEmail,
           buktiPembayaran: {
@@ -530,9 +527,7 @@ export default function PembayaranPage() {
                       if (userData) {
                         const user = JSON.parse(userData);
                         try {
-                          const paymentRes = await fetch(
-                            `${process.env.NEXT_PUBLIC_API_URL}/api/pembayaran/email/${encodeURIComponent(user.email)}`,
-                          );
+                          const paymentRes = await apiFetch(`/api/pembayaran/email/${encodeURIComponent(user.email)}`);
                           const paymentData = await paymentRes.json();
                           if (paymentData.data?.id_pendaftaran) {
                             window.location.href = `/PublicWeb/pembayaran/buktipembayaran?id=${paymentData.data.id_pendaftaran}`;

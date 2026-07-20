@@ -1,6 +1,8 @@
 'use client';
 
 import Image from 'next/image';
+import { API_URL } from "@/lib/config";
+import { apiFetch } from "@/lib/api";
 import "@/styles/globals.css";
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -38,9 +40,8 @@ export default function RegisterPage() {
     }
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/user/register`, {
+      const res = await apiFetch('/api/user/register', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
 

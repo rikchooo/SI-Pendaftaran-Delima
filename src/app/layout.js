@@ -41,6 +41,7 @@ export default function RootLayout({ children }) {
       <head>
         <title>Pendaftaran Santri Baru - Pondok Pesantren Delima Tanjung Rejo</title>
         <meta name="description" content="PSB Delima Tanjung Rejo" />
+        <link rel="icon" href="/icons/LogoPonPes.png" />
       </head>
 
       <body className="min-h-screen flex flex-col bg-white">

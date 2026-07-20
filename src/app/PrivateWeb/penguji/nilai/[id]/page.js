@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { API_URL } from "@/lib/config";
+import { apiFetch } from "@/lib/api";
 import { useRouter, useParams } from "next/navigation";
 import PrivateHeader from "@/components/PrivateHeader";
 
@@ -36,10 +38,7 @@ export default function InputNilaiPage() {
           return;
         }
 
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pendaftaran/santri/${params.id}`, {
-          headers: {
-            'Content-Type': 'application/json',
-          },
+        const response = await apiFetch(`/api/pendaftaran/santri/${params.id}`, {
         });
 
         if (!response.ok) {
@@ -110,11 +109,8 @@ const handleSubmit = async (e) => {
   
   setSubmitting(true);
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pengujian/santri/${params.id}/nilai`, {
+    const response = await apiFetch(`/api/pengujian/santri/${params.id}/nilai`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify({
         nilai_alquran: parseFloat(formData.nilaiAlquran),
         nilai_kitab: parseFloat(formData.nilaiKitab),
@@ -153,7 +149,6 @@ const handleSubmit = async (e) => {
       router.push("/PrivateWeb/penguji");
     }
   };
-
 
   if (error) {
     return (

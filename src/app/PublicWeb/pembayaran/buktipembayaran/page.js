@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { API_URL } from "@/lib/config";
+import { apiFetch } from "@/lib/api";
 import { useRouter, useSearchParams } from "next/navigation";
 import "@/styles/globals.css";
 export default function LaporanPage() {
@@ -22,9 +24,7 @@ export default function LaporanPage() {
       }
 
       try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/pembayaran/pendaftaran/${id}`
-        );
+        const response = await apiFetch(`/api/pembayaran/pendaftaran/${id}`);
         if (!response.ok) {
           throw new Error("Gagal mengambil data pembayaran");
         }
