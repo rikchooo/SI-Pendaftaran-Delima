@@ -56,7 +56,7 @@ export default function LoginPage() {
     }
 
     try {
-      const res = await fetch("http://localhost:5002/api/private/login", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/private/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password, role }),
@@ -77,7 +77,7 @@ export default function LoginPage() {
 
       router.push(`/PrivateWeb/${role}`);
     } catch (err) {
-      setError("Terjadi kesalahan. Silakan coba lagi.");
+      setError(err.message || "Terjadi kesalahan. Silakan coba lagi.");
     } finally {
       setLoading(false);
     }

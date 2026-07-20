@@ -37,7 +37,7 @@ export default function PengasuhDashboard() {
         }
 
         const regResponse = await fetch(
-          "http://localhost:5002/api/pendaftaran/santri",
+          `${process.env.NEXT_PUBLIC_API_URL}/api/pendaftaran/santri`,
           {
             headers: { "Content-Type": "application/json" },
           },
@@ -47,7 +47,7 @@ export default function PengasuhDashboard() {
         const regResult = await regResponse.json();
 
         const payResponse = await fetch(
-          "http://localhost:5002/api/pembayaran",
+          `${process.env.NEXT_PUBLIC_API_URL}/api/pembayaran`,
           {
             headers: { "Content-Type": "application/json" },
           },

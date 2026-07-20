@@ -32,12 +32,12 @@ export default function PengujiDashboard() {
         }
 
 const [santriResponse, nilaiResponse] = await Promise.all([
-           fetch("http://localhost:5002/api/pendaftaran/santri", {
+           fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pendaftaran/santri`, {
              headers: {
                'Content-Type': 'application/json',
              },
            }),
-           fetch("http://localhost:5002/api/pengujian/santri", {
+           fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pengujian/santri`, {
              headers: {
                'Content-Type': 'application/json',
              },

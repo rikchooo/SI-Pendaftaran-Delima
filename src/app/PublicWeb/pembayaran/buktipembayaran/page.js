@@ -23,7 +23,7 @@ export default function LaporanPage() {
 
       try {
         const response = await fetch(
-          `http://localhost:5002/api/pembayaran/pendaftaran/${id}`
+          `${process.env.NEXT_PUBLIC_API_URL}/api/pembayaran/pendaftaran/${id}`
         );
         if (!response.ok) {
           throw new Error("Gagal mengambil data pembayaran");

@@ -34,7 +34,7 @@ export default function SantriDetail() {
         setAuthChecked(true);
 
         // Fetch data santri dari backend
-        const response = await fetch(`http://localhost:5002/api/pendaftaran/santri/${params.id}`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pendaftaran/santri/${params.id}`, {
           headers: {
             'Content-Type': 'application/json',
           },

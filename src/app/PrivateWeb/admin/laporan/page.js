@@ -32,7 +32,7 @@ export default function LaporanPage() {
 
         // Fetch data santri yang diterima
         const res = await fetch(
-          "http://localhost:5002/api/pendaftaran/santri"
+          `${process.env.NEXT_PUBLIC_API_URL}/api/pendaftaran/santri`
         );
         const result = await res.json();
 

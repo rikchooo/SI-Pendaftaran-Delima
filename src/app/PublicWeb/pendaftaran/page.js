@@ -214,7 +214,7 @@ export default function PendaftaranSantri() {
         }
       }
 
-      const response = await fetch('http://localhost:5002/api/pendaftaran/santri', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pendaftaran/santri`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

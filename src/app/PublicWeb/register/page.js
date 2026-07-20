@@ -38,7 +38,7 @@ export default function RegisterPage() {
     }
 
     try {
-      const res = await fetch('http://localhost:5002/api/user/register', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/user/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
@@ -55,7 +55,7 @@ export default function RegisterPage() {
       alert('Registrasi berhasil! Silakan login.');
       router.push('/PublicWeb/login');
     } catch (err) {
-      setError('Terjadi kesalahan. Silakan coba lagi.');
+      setError(err.message || 'Terjadi kesalahan. Silakan coba lagi.');
     } finally {
       setLoading(false);
     }

@@ -37,7 +37,7 @@ export default function PembayaranPage() {
         const fetchPaymentStatus = async () => {
           try {
             const response = await fetch(
-              `http://localhost:5002/api/pendaftaran/status/${encodeURIComponent(email)}`,
+              `${process.env.NEXT_PUBLIC_API_URL}/api/pendaftaran/status/${encodeURIComponent(email)}`,
             );
             if (response.ok) {
               const data = await response.json();
@@ -159,7 +159,7 @@ export default function PembayaranPage() {
       }
 
       // Kirim ke backend
-      const response = await fetch("http://localhost:5002/api/pembayaran", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pembayaran`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -531,7 +531,7 @@ export default function PembayaranPage() {
                         const user = JSON.parse(userData);
                         try {
                           const paymentRes = await fetch(
-                            `http://localhost:5002/api/pembayaran/email/${encodeURIComponent(user.email)}`,
+                            `${process.env.NEXT_PUBLIC_API_URL}/api/pembayaran/email/${encodeURIComponent(user.email)}`,
                           );
                           const paymentData = await paymentRes.json();
                           if (paymentData.data?.id_pendaftaran) {

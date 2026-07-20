@@ -31,7 +31,7 @@ export default function LoginPage() {
     }
 
     try {
-      const res = await fetch('http://localhost:5002/api/user/login', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/user/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
@@ -51,7 +51,7 @@ export default function LoginPage() {
       alert('Login berhasil!');
       router.push('/');
     } catch (err) {
-      setError('Terjadi kesalahan. Silakan coba lagi.');
+      setError(err.message || 'Terjadi kesalahan. Silakan coba lagi.');
     } finally {
       setLoading(false);
     }

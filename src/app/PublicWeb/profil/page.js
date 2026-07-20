@@ -67,7 +67,7 @@ export default function ProfilPage() {
     const fetchLatestStatus = async () => {
       setFetchError(null);
       try {
-        const statusResponse = await fetch(`http://localhost:5002/api/pendaftaran/status/${encodeURIComponent(user.email)}`);
+        const statusResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pendaftaran/status/${encodeURIComponent(user.email)}`);
         if (!statusResponse.ok) {
           throw new Error(`HTTP error! status: ${statusResponse.status}`);
         }
@@ -81,7 +81,7 @@ export default function ProfilPage() {
           localStorage.setItem('payment_status', data.payment_status);
         }
 
-        const paymentResponse = await fetch(`http://localhost:5002/api/pembayaran/email/${encodeURIComponent(user.email)}`);
+        const paymentResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pembayaran/email/${encodeURIComponent(user.email)}`);
         if (paymentResponse.ok) {
           const paymentResult = await paymentResponse.json();
           if (paymentResult.data) {

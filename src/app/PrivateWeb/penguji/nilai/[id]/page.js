@@ -36,7 +36,7 @@ export default function InputNilaiPage() {
           return;
         }
 
-        const response = await fetch(`http://localhost:5002/api/pendaftaran/santri/${params.id}`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pendaftaran/santri/${params.id}`, {
           headers: {
             'Content-Type': 'application/json',
           },
@@ -110,7 +110,7 @@ const handleSubmit = async (e) => {
   
   setSubmitting(true);
   try {
-    const response = await fetch(`http://localhost:5002/api/pengujian/santri/${params.id}/nilai`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pengujian/santri/${params.id}/nilai`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

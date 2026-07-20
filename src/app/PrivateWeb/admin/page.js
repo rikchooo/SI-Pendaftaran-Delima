@@ -58,7 +58,7 @@ export default function AdminDashboard() {
         
         // Health check sebelum fetch data utama
         try {
-          const healthCheck = await fetch("http://localhost:5002/api/health", {
+          const healthCheck = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/health`, {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' },
           });
@@ -72,7 +72,7 @@ export default function AdminDashboard() {
         }
 
         // Fetch data santri
-        const response = await fetch("http://localhost:5002/api/pendaftaran/santri", {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pendaftaran/santri`, {
           headers: {
             'Content-Type': 'application/json',
           },
@@ -116,7 +116,7 @@ export default function AdminDashboard() {
         
         let errorMessage = err.message;
         if (err.name === 'TypeError' && err.message === 'Failed to fetch') {
-          errorMessage = 'Server backend tidak dapat dihubungi. Pastikan server backend sedang berjalan pada port 5002.';
+          errorMessage = 'Server backend tidak dapat dihubungi. Pastikan server backend sedang berjalan.';
         } else if (err.message.includes('NetworkError') || err.message.includes('network request failed')) {
           errorMessage = 'Terjadi kesalahan jaringan. Periksa koneksi Anda.';
         }
@@ -179,7 +179,7 @@ export default function AdminDashboard() {
     
 // Validasi status baru
     try {
-      const response = await fetch(`http://localhost:5002/api/pendaftaran/santri/${id}/status`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pendaftaran/santri/${id}/status`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
