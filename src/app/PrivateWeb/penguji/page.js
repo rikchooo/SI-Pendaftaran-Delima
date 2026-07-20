@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { API_URL } from "@/lib/config";
+import { apiFetch } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import '@/styles/globals.css';
 import PrivateHeader from "@/components/PrivateHeader";
