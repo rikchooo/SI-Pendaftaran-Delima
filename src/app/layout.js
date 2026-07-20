@@ -42,6 +42,8 @@ export default function RootLayout({ children }) {
         <title>Pendaftaran Santri Baru - Pondok Pesantren Delima Tanjung Rejo</title>
         <meta name="description" content="PSB Delima Tanjung Rejo" />
         <link rel="icon" href="/icons/LogoPonPes.png" />
+        <link rel="apple-touch-icon" href="/icons/LogoPonPes.png" />
+        <link rel="manifest" href="/manifest.json" />
       </head>
 
       <body className="min-h-screen flex flex-col bg-white">

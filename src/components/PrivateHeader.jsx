@@ -44,7 +44,7 @@ export default function PrivateHeader() {
           <div className="flex items-center space-x-3">
             <Link href={`/PrivateWeb/${user?.role || 'admin'}`} className="w-10 h-10 block flex-shrink-0">
               <Image
-                src="/icons/LogoPonpes.png"
+                src="/icons/LogoPonPes.png"
                 alt="Logo PonPes"
                 width={40}
                 height={40}
