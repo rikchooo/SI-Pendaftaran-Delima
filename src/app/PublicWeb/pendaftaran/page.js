@@ -144,28 +144,78 @@ export default function PendaftaranSantri() {
   // Fungsi untuk upload file ke Cloudinary
   const uploadFileToCloudinary = async (file, folderName, fileName) => {
     try {
+      // Validasi nama folder
+      if (!folderName || folderName.trim() === '') {
+        throw new Error('Nama lengkap santri harus diisi terlebih dahulu');
+      }
+
       const formDataUpload = new FormData();
       formDataUpload.append('file', file);
       formDataUpload.append('upload_preset', process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET);
-      formDataUpload.append('folder', `santri/${folderName}`);
+      
+      // Sanitize folder name - replace special characters
+      const sanitizedFolder = folderName.replace(/[^a-zA-Z0-9_-]/g, '_');
+      formDataUpload.append('folder', `santri/${sanitizedFolder}`);
       formDataUpload.append('public_id', `${fileName}_${Date.now()}`);
       formDataUpload.append('resource_type', 
         file.type.startsWith('image/') ? 'image' : 'raw'
       );
 
-      const response = await fetch( 
-        `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/upload`,
-        {
-          method: 'POST',
-          body: formDataUpload,
-        }
-      );
-
-      const data = await response.json();
+      const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/upload`;
       
-      if (!response.ok || data.error) {
-        throw new Error(data.error?.message || 'Upload gagal');
+      if (!process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME) {
+        throw new Error('Konfigurasi Cloudinary tidak lengkap: CLOUD_NAME tidak ditemukan');
       }
+
+      if (!process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET) {
+        throw new Error('Konfigurasi Cloudinary tidak lengkap: UPLOAD_PRESET tidak ditemukan');
+      }
+
+      console.log('Uploading file:', {
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type,
+        folder: `santri/${sanitizedFolder}`,
+        cloudinaryUrl: cloudinaryUrl
+      });
+
+      const response = await fetch(cloudinaryUrl, {
+        method: 'POST',
+        body: formDataUpload,
+      });
+
+      let data;
+      try {
+        data = await response.json();
+      } catch (e) {
+        console.error('Failed to parse Cloudinary response:', e);
+        const responseText = await response.text();
+        console.error('Response text:', responseText);
+        throw new Error(`Server Cloudinary mengembalikan respons tidak valid (status: ${response.status})`);
+      }
+      
+      if (!response.ok) {
+        const errorMsg = data?.error?.message || 
+                         data?.error || 
+                         `HTTP ${response.status}`;
+        console.error('Cloudinary error response:', data);
+        throw new Error(`Upload gagal: ${errorMsg}`);
+      }
+
+      if (data.error) {
+        console.error('Cloudinary error in response:', data.error);
+        throw new Error(`Upload gagal: ${data.error.message || data.error}`);
+      }
+
+      if (!data.secure_url) {
+        console.error('No secure_url in response:', data);
+        throw new Error('Upload berhasil tetapi tidak mendapat URL file');
+      }
+
+      console.log('Upload successful:', {
+        url: data.secure_url,
+        publicId: data.public_id
+      });
 
       return {
         url: data.secure_url,
@@ -187,6 +237,22 @@ export default function PendaftaranSantri() {
     setError(null);
 
     try {
+      // Validasi data wajib diisi
+      const requiredFields = ['namaLengkap', 'namaPanggilan', 'jenisKelamin'];
+      const missingFields = requiredFields.filter(field => !formData[field]);
+      
+      if (missingFields.length > 0) {
+        const fieldLabels = {
+          namaLengkap: 'Nama Lengkap',
+          namaPanggilan: 'Nama Panggilan',
+          jenisKelamin: 'Jenis Kelamin'
+        };
+        const missingLabels = missingFields.map(f => fieldLabels[f]).join(', ');
+        setError(`Mohon lengkapi field wajib: ${missingLabels}`);
+        setIsSubmitting(false);
+        return;
+      }
+
       const requiredFiles = ['akta', 'kk', 'ktpOrtu', 'ijazah', 'foto', 'suratSehat'];
       const missingFiles = requiredFiles.filter(file => !berkas[file] && !savedBerkas[file]);
       
@@ -194,27 +260,36 @@ export default function PendaftaranSantri() {
         const missingNames = missingFiles.map(name => 
           berkasList.find(b => b.name === name)?.label
         ).join(', ');
-        alert(`Mohon lengkapi berkas: ${missingNames}`);
+        setError(`Mohon lengkapi berkas: ${missingNames}`);
         setIsSubmitting(false);
         return;
       }
 
+      console.log('Starting file upload process for:', formData.namaLengkap);
+      
       const cloudinaryUrls = { ...savedBerkas };
       setUploadingFiles({});
 
       for (const [key, file] of Object.entries(berkas)) {
+        if (!file) continue;
+        
         setUploadingFiles(prev => ({ ...prev, [key]: true }));
         
         try {
+          console.log(`Uploading file: ${key}`);
           const result = await uploadFileToCloudinary(file, formData.namaLengkap, key);
           cloudinaryUrls[key] = result;
+          console.log(`Successfully uploaded ${key}`);
         } catch (error) {
           console.error(`Upload ${key} gagal:`, error);
-          throw new Error(`Gagal upload ${berkasList.find(b => b.name === key)?.label}`);
+          const berkaLabel = berkasList.find(b => b.name === key)?.label || key;
+          throw new Error(`Gagal upload ${berkaLabel}: ${error.message}`);
         } finally {
           setUploadingFiles(prev => ({ ...prev, [key]: false }));
         }
       }
+
+      console.log('All files uploaded. Submitting registration to backend...');
 
       const response = await apiFetch(`/api/pendaftaran/santri`, {
         method: 'POST',

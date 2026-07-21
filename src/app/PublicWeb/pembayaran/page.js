@@ -118,6 +118,21 @@ export default function PembayaranPage() {
     setUploadError("");
 
     try {
+      // Validasi konfigurasi Cloudinary
+      if (!process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME) {
+        throw new Error('Konfigurasi Cloudinary tidak lengkap: CLOUD_NAME tidak ditemukan');
+      }
+
+      if (!process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET) {
+        throw new Error('Konfigurasi Cloudinary tidak lengkap: UPLOAD_PRESET tidak ditemukan');
+      }
+
+      console.log('Starting payment proof upload:', {
+        fileName: buktiPembayaran.name,
+        fileSize: buktiPembayaran.size,
+        fileType: buktiPembayaran.type,
+      });
+
       // Upload ke Cloudinary
       const formDataUpload = new FormData();
       formDataUpload.append("file", buktiPembayaran);
@@ -132,24 +147,39 @@ export default function PembayaranPage() {
         buktiPembayaran.type.startsWith("image/") ? "image" : "raw",
       );
 
+      const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/upload`;
+      console.log('Uploading to:', cloudinaryUrl);
+
       const cloudinaryResponse = await fetch(
-        `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/upload`,
+        cloudinaryUrl,
         {
           method: "POST",
           body: formDataUpload,
         },
       );
 
-      // Check if response is OK before parsing JSON
-      if (!cloudinaryResponse.ok) {
+      let cloudinaryData;
+      try {
+        cloudinaryData = await cloudinaryResponse.json();
+      } catch (parseError) {
+        console.error('Failed to parse Cloudinary response:', parseError);
         const textResponse = await cloudinaryResponse.text();
-        console.error("Cloudinary error response:", textResponse);
+        console.error('Response text:', textResponse);
         throw new Error(
-          `Cloudinary error: ${cloudinaryResponse.status} - ${textResponse.substring(0, 100)}`,
+          `Server Cloudinary mengembalikan respons tidak valid (status: ${cloudinaryResponse.status})`
         );
       }
 
-      const cloudinaryData = await cloudinaryResponse.json();
+      // Check if response is OK before using data
+      if (!cloudinaryResponse.ok) {
+        const errorMsg = cloudinaryData?.error?.message || 
+                         cloudinaryData?.error || 
+                         `HTTP ${cloudinaryResponse.status}`;
+        console.error("Cloudinary error response:", cloudinaryData);
+        throw new Error(
+          `Upload ke Cloudinary gagal: ${errorMsg}`,
+        );
+      }
 
       if (cloudinaryData.error) {
         console.error("Cloudinary error:", cloudinaryData);
@@ -157,6 +187,16 @@ export default function PembayaranPage() {
           cloudinaryData.error.message || "Upload ke Cloudinary gagal",
         );
       }
+
+      if (!cloudinaryData.secure_url) {
+        console.error('No secure_url in response:', cloudinaryData);
+        throw new Error('Upload berhasil tetapi tidak mendapat URL file');
+      }
+
+      console.log('Upload successful:', {
+        url: cloudinaryData.secure_url,
+        publicId: cloudinaryData.public_id
+      });
 
       // Kirim ke backend
       const response = await apiFetch(`/api/pembayaran`, {

@@ -36,7 +36,7 @@ export default function AdminDashboard() {
     // Fungsi untuk memeriksa session dan mengambil data santri
     const fetchData = async () => {
       try {
-      let parsed;
+        let parsed;
         try {
           const session = localStorage.getItem("private_session");
           if (!session) {
@@ -50,6 +50,7 @@ export default function AdminDashboard() {
             return;
           }
         } catch (parseErr) {
+          console.error('Session parse error:', parseErr);
           router.replace("/PrivateWeb/login");
           return;
         }

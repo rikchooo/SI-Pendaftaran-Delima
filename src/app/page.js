@@ -14,6 +14,7 @@ const DEFAULT_REGISTRATION_SCHEDULE = {
   wave3: "1 Jul - 30 Sep 2026",
 };
 
+
 export default function LandingPage() {
   const [registrationSchedule, setRegistrationSchedule] = useState(DEFAULT_REGISTRATION_SCHEDULE);
 

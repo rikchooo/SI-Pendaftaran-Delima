@@ -33,10 +33,10 @@ export default function PengujiDashboard() {
           return;
         }
 
-const [santriResponse, nilaiResponse] = await Promise.all([
-           apiFetch('/api/pendaftaran/santri'),
-           apiFetch('/api/pengujian/santri')
-         ]);
+        const [santriResponse, nilaiResponse] = await Promise.all([
+          apiFetch('/api/pendaftaran/santri'),
+          apiFetch('/api/pengujian/santri')
+        ]);
 
         if (!santriResponse.ok) {
           throw new Error('Failed to fetch santri data');

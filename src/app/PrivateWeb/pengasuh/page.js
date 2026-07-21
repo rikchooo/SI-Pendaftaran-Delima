@@ -104,7 +104,7 @@ export default function PengasuhDashboard() {
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsStatusDropdownOpen(false);
+        // Dropdown handling (if implemented)
       }
     };
 
