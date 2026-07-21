@@ -130,9 +130,6 @@ export default function LoginPage() {
               />
             </div>
           </div>
-          <h2 className="text-xl font-bold leading-tight tracking-tight text-white mb-1">
-            Masuk ke Akun Private
-          </h2>
         </div>
 
         <div className="hidden md:block" />
@@ -143,7 +140,7 @@ export default function LoginPage() {
               Masuk ke Akun Private
             </h1>
             <p className="text-gray-500 text-sm leading-relaxed">
-              Silakan masukkan email, kata sandi, dan pilih role Anda untuk masuk ke sistem.
+              Silakan masukkan email, kata sandi, dan pilih role anda untuk masuk ke sistem.
             </p>
           </div>
 
