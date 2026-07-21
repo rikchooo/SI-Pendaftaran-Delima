@@ -257,17 +257,6 @@ export default function LoginPage() {
               {!loading && <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />}
             </button>
           </form>
-
-          <div className="text-center text-sm mt-8">
-            <span className="text-gray-500">Belum punya akun? </span>
-            <button
-              type="button"
-              onClick={() => router.push('/PublicWeb/register')}
-              className="font-bold text-[#137333] hover:text-[#0f5c29] hover:underline transition-colors ml-1"
-            >
-              Daftar
-            </button>
-          </div>
         </div>
         
         <div className="hidden md:block" />
