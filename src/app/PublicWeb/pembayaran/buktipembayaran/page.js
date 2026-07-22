@@ -5,15 +5,15 @@ import { apiFetch } from "@/lib/api";
 import { getAuthToken } from "@/lib/auth";
 import { useRouter, useSearchParams } from "next/navigation";
 import "@/styles/globals.css";
+
 export default function LaporanPage() {
-  // State untuk data pembayaran, error, dan router
   const [pembayaran, setPembayaran] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [biaya, setBiaya] = useState(0);
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Fetch data pembayaran berdasarkan id_pendaftaran
   useEffect(() => {
     const fetchPembayaran = async () => {
       if (!getAuthToken()) {
@@ -29,12 +29,26 @@ export default function LaporanPage() {
       }
 
       try {
-        const response = await apiFetch(`/api/pembayaran/pendaftaran/${id}`);
-        if (!response.ok) {
+        const [paymentRes, settingsRes] = await Promise.all([
+          apiFetch(`/api/pembayaran/pendaftaran/${id}`),
+          apiFetch('/api/settings'),
+        ]);
+
+        if (!paymentRes.ok) {
           throw new Error("Gagal mengambil data pembayaran");
         }
-        const result = await response.json();
-        setPembayaran(result.data);
+        const paymentResult = await paymentRes.json();
+        setPembayaran(paymentResult.data);
+
+        if (settingsRes.ok) {
+          const settingsData = await settingsRes.json();
+          const activeYear = settingsData.data?.active_year || new Date().getFullYear();
+          const biayaRes = await apiFetch(`/api/settings/biaya/${activeYear}`);
+          if (biayaRes.ok) {
+            const biayaData = await biayaRes.json();
+            setBiaya(biayaData.biaya || 0);
+          }
+        }
         setError(null);
       } catch (err) {
         setError(err.message);
@@ -50,12 +64,10 @@ export default function LaporanPage() {
   if (loading) return <div className="p-6">Memuat data pembayaran...</div>;
   if (!pembayaran) return <div className="p-6">Data pembayaran tidak ditemukan</div>;
 
-  // Fungsi tombol cetak
   const handlePrint = () => {
     window.print();
   };
 
-  // Fungsi tombol kembali
   const handleBack = () => {
     if (window.history.length > 1) {
       router.back();
@@ -66,7 +78,6 @@ export default function LaporanPage() {
 
   const formatTanggal = (tanggal) => {
     if (!tanggal) return "-";
-
     try {
       return new Date(tanggal).toLocaleDateString("id-ID", {
         weekday: "long",
@@ -103,7 +114,7 @@ export default function LaporanPage() {
     }
   };
 
-  const nominal = 500000;
+  const nominal = biaya || pembayaran.nominal || 0;
   const terbilang = (() => {
     const bilangan = [
       "",
@@ -147,6 +158,8 @@ export default function LaporanPage() {
     return (penggalan(nominal) + " Rupiah").replace(/\s+/g, " ").trim();
   })();
 
+  const noRegistrasi = pembayaran.no_registrasi || `PSB-${String(pembayaran.id_pendaftaran || searchParams.get("id") || "-").padStart(4, '0')}`;
+
   return (
     <div className="kwitansi-wrapper">
       <div className="no-print fixed top-6 right-6 z-50 flex flex-col gap-3">
@@ -183,7 +196,11 @@ export default function LaporanPage() {
                 <tbody>
                   <tr>
                     <td>No. Kwitansi</td>
-                    <td>: {pembayaran.no_kwitansi || "KW-" + (searchParams.get("id") || "-")}</td>
+                    <td>: {noRegistrasi}</td>
+                  </tr>
+                  <tr>
+                    <td>No. Registrasi</td>
+                    <td>: {noRegistrasi}</td>
                   </tr>
                   <tr>
                     <td>Tanggal</td>
@@ -216,7 +233,7 @@ export default function LaporanPage() {
                   <td className="label">Untuk Pembayaran</td>
                   <td className="colon">:</td>
                   <td className="value">
-                    Pendaftaran Santri Baru Tahun Ajaran 2026/2027
+                    Pendaftaran Santri Baru Tahun Ajaran {pembayaran.tahun_pendaftaran || new Date().getFullYear()}/{String((pembayaran.tahun_pendaftaran || new Date().getFullYear()) + 1).slice(-2)}
                   </td>
                 </tr>
                 <tr>
@@ -235,7 +252,7 @@ export default function LaporanPage() {
 
           <div className="kwitansi-amount">
             <span className="amount-label">JUMLAH</span>
-            <span className="amount-value">{formatRupiah(pembayaran.nominal)}</span>
+            <span className="amount-value">{formatRupiah(nominal)}</span>
           </div>
 
           <div className="kwitansi-footer">
@@ -245,8 +262,17 @@ export default function LaporanPage() {
             </div>
             <div className="kwitansi-sign">
               <p>Mengetahui,</p>
+              <p className="sign-space">Panitia</p>
+              <p className="sign-name">( ____________________ )</p>
               <p className="sign-space">Bendahara</p>
               <p className="sign-name">( ____________________ )</p>
+            </div>
+            <div className="kwitansi-stamp">
+              <div className="stamp-placeholder">
+                <p>STEMPEL</p>
+                <p>PONDOK PESANTREN</p>
+                <p>DELIMA</p>
+              </div>
             </div>
           </div>
         </div>

@@ -355,6 +355,7 @@ body{
   display: flex;
   flex-direction: column;
   height: 110mm;
+  position: relative;
 }
 
 .kwitansi-header {
@@ -461,6 +462,7 @@ body{
   justify-content: space-between;
   align-items: flex-end;
   flex-shrink: 0;
+  position: relative;
 }
 
 .kwitansi-note {
@@ -476,7 +478,7 @@ body{
 .kwitansi-sign {
   text-align: center;
   font-size: 10pt;
-  width: 180px;
+  width: 200px;
 }
 
 .kwitansi-sign .sign-space {
@@ -485,6 +487,36 @@ body{
 
 .kwitansi-sign .sign-name {
   margin-top: 4px;
+}
+
+.kwitansi-stamp {
+  position: absolute;
+  bottom: 8mm;
+  right: 10mm;
+  width: 50mm;
+  height: 50mm;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+.stamp-placeholder {
+  width: 45mm;
+  height: 45mm;
+  border: 3px solid #c0392b;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #c0392b;
+  font-weight: bold;
+  font-size: 10pt;
+  line-height: 1.2;
+  transform: rotate(-15deg);
 }
 
 @media screen and (max-width: 768px) {

@@ -1,13 +1,38 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { apiFetch } from "@/lib/api";
 import { getAuthToken, getPrivateSession } from "@/lib/auth";
 import { useRouter, useParams } from "next/navigation";
 import PrivateHeader from "@/components/PrivateHeader";
 
+function getLevel(nilai) {
+  const n = parseFloat(nilai);
+  if (isNaN(n)) return "";
+  if (n <= 20) return "pemula";
+  if (n <= 40) return "dasar";
+  if (n <= 60) return "menengah";
+  if (n <= 80) return "lanjut";
+  return "mahir";
+}
+
+const LEVEL_LABELS = {
+  pemula: "Pemula",
+  dasar: "Dasar",
+  menengah: "Menengah",
+  lanjut: "Lanjut",
+  mahir: "Mahir",
+};
+
+const RANGE_INFO = [
+  { min: 0, max: 20, level: "Pemula" },
+  { min: 21, max: 40, level: "Dasar" },
+  { min: 41, max: 60, level: "Menengah" },
+  { min: 61, max: 80, level: "Lanjut" },
+  { min: 81, max: 100, level: "Mahir" },
+];
+
 export default function InputNilaiPage() {
-  // State untuk data santri, loading, error, submitting, dan form data
   const [santri, setSantri] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -15,15 +40,15 @@ export default function InputNilaiPage() {
   const [formData, setFormData] = useState({
     nilaiAlquran: "",
     nilaiKitab: "",
-    quranLevel: "",
-    kitabLevel: "",
     catatan: "",
   });
   const router = useRouter();
   const params = useParams();
 
+  const autoLevelAlquran = useMemo(() => getLevel(formData.nilaiAlquran), [formData.nilaiAlquran]);
+  const autoLevelKitab = useMemo(() => getLevel(formData.nilaiKitab), [formData.nilaiKitab]);
+
   useEffect(() => {
-    // Cek session dan fetch data santri
     const fetchData = async () => {
       try {
         if (!getAuthToken()) {
@@ -37,8 +62,7 @@ export default function InputNilaiPage() {
           return;
         }
 
-        const response = await apiFetch(`/api/pendaftaran/santri/${params.id}`, {
-        });
+        const response = await apiFetch(`/api/pendaftaran/santri/${params.id}`);
 
         if (!response.ok) {
           throw new Error('Gagal memuat data santri');
@@ -73,7 +97,6 @@ export default function InputNilaiPage() {
     fetchData();
   }, [params.id, router]);
 
-  // Handle input change
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -82,15 +105,23 @@ export default function InputNilaiPage() {
     }));
   };
 
-  // State fungsi validasi form
   const validateForm = () => {
-    if (!formData.nilaiAlquran || !formData.nilaiKitab) {
-      alert("Nilai Al-Quran dan Kitab Kuning harus diisi");
+    if (!formData.nilaiAlquran && formData.nilaiAlquran !== 0) {
+      alert("Nilai Al-Quran harus diisi");
+      return false;
+    }
+    if (!formData.nilaiKitab && formData.nilaiKitab !== 0) {
+      alert("Nilai Kitab Kuning harus diisi");
       return false;
     }
     
     const alquran = parseFloat(formData.nilaiAlquran);
     const kitab = parseFloat(formData.nilaiKitab);
+    
+    if (isNaN(alquran) || isNaN(kitab)) {
+      alert("Nilai harus berupa angka");
+      return false;
+    }
     
     if (alquran < 0 || alquran > 100 || kitab < 0 || kitab > 100) {
       alert("Nilai harus antara 0-100");
@@ -100,47 +131,41 @@ export default function InputNilaiPage() {
     return true;
   };
 
-  // Handle form submit
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  
-  if (!validateForm()) return;
-  
-  setSubmitting(true);
-  try {
-    const response = await apiFetch(`/api/pengujian/santri/${params.id}/nilai`, {
-      method: 'POST',
-      body: JSON.stringify({
-        nilai_alquran: parseFloat(formData.nilaiAlquran),
-        nilai_kitab: parseFloat(formData.nilaiKitab),
-        level_alquran: formData.quranLevel,
-        level_kitab: formData.kitabLevel,
-        catatan: formData.catatan,
-      }),
-    });
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!validateForm()) return;
+    
+    setSubmitting(true);
+    try {
+      const response = await apiFetch(`/api/pengujian/santri/${params.id}/nilai`, {
+        method: 'POST',
+        body: JSON.stringify({
+          nilai_alquran: parseFloat(formData.nilaiAlquran),
+          nilai_kitab: parseFloat(formData.nilaiKitab),
+          catatan: formData.catatan,
+        }),
+      });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || errorData.message || 'Gagal menyimpan nilai');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || errorData.message || 'Gagal menyimpan nilai');
+      }
+
+      const result = await response.json();
+      
+      alert("✅ Nilai berhasil disimpan!");
+      
+      router.back();
+      
+    } catch (err) {
+      console.error('Error submitting nilai:', err);
+      alert(`❌ Gagal menyimpan nilai: ${err.message}`);
+    } finally {
+      setSubmitting(false);
     }
+  };
 
-    const result = await response.json();
-    
-    // ✅ Tampilkan notifikasi sukses
-    alert("✅ Nilai berhasil disimpan!");
-    
-    // ✅ Kembali ke halaman sebelumnya (bukan login)
-    router.back();
-    
-  } catch (err) {
-    console.error('Error submitting nilai:', err);
-    alert(`❌ Gagal menyimpan nilai: ${err.message}`);
-  } finally {
-    setSubmitting(false);
-  }
-};
-
-  // Handle tombol kembali
   const handleBack = () => {
     if (window.history.length > 1) {
       router.back();
@@ -179,15 +204,14 @@ const handleSubmit = async (e) => {
       <PrivateHeader />
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
         <div className="mb-8">
           <button
             onClick={handleBack}
             className="flex items-center text-gray-700 hover:text-green-600 mb-6 transition-colors"
           >
-          <svg className="w-5 h-5 sm:w-6 sm:h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
+            <svg className="w-5 h-5 sm:w-6 sm:h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
             <span className="font-semibold text-base sm:text-lg">Kembali</span>
           </button>
           
@@ -208,7 +232,6 @@ const handleSubmit = async (e) => {
 
         <section className="bg-white rounded-2xl shadow-xl p-6 md:p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Data Santri */}
             <div className="bg-gray-50 rounded-lg p-4">
               <h3 className="text-lg font-semibold text-gray-900 mb-3">Data Santri</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -231,6 +254,18 @@ const handleSubmit = async (e) => {
               </div>
             </div>
 
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h3 className="text-sm font-semibold text-blue-800 mb-2">Keterangan Level</h3>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs">
+                {RANGE_INFO.map((r) => (
+                  <div key={r.level} className="bg-white rounded px-2 py-1 border border-blue-100">
+                    <span className="font-medium text-gray-700">{r.min} - {r.max}</span>
+                    <span className="text-gray-500 ml-1">: {r.level}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <div className="border-b border-gray-200 pb-6">
               <div className="flex items-center mb-4">
                 <div className="bg-gradient-to-br from-green-500 to-green-600 p-2 rounded-lg mr-3">
@@ -240,7 +275,7 @@ const handleSubmit = async (e) => {
                 </div>
                 <h3 className="text-xl font-bold text-gray-900">Nilai Al-Quran</h3>
               </div>
-              
+               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -263,21 +298,15 @@ const handleSubmit = async (e) => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Level Al-Quran
+                    Level Al-Quran (Otomatis)
                   </label>
-                  <select
-                    name="quranLevel"
-                    value={formData.quranLevel}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition bg-white"
-                  >
-                    <option value="">Pilih Level</option>
-                    <option value="pemula">Pemula (Baru Belajar)</option>
-                    <option value="dasar">Dasar (Bisa Iqro`)</option>
-                    <option value="menengah">Menengah (Bisa Baca Al-Quran)</option>
-                    <option value="lanjut">Lanjut (Tahsin/Tahfidz)</option>
-                    <option value="mahir">Mahir (Hafalan Juz 30+)</option>
-                  </select>
+                  <input
+                    type="text"
+                    value={LEVEL_LABELS[autoLevelAlquran] || '-'}
+                    readOnly
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 outline-none"
+                  />
+                  <input type="hidden" name="quranLevel" value={autoLevelAlquran} />
                 </div>
               </div>
             </div>
@@ -286,12 +315,12 @@ const handleSubmit = async (e) => {
               <div className="flex items-center mb-4">
                 <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 p-2 rounded-lg mr-3">
                   <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 5 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                   </svg>
                 </div>
                 <h3 className="text-xl font-bold text-gray-900">Nilai Kitab Kuning</h3>
               </div>
-              
+               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -314,21 +343,15 @@ const handleSubmit = async (e) => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Level Kitab Kuning
+                    Level Kitab Kuning (Otomatis)
                   </label>
-                  <select
-                    name="kitabLevel"
-                    value={formData.kitabLevel}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition bg-white"
-                  >
-                    <option value="">Pilih Level</option>
-                    <option value="pemula">Pemula (Belum Pernah)</option>
-                    <option value="dasar">Dasar (Baru Mulai)</option>
-                    <option value="menengah">Menengah (Sudah Paham Dasar)</option>
-                    <option value="lanjut">Lanjut (Bisa Membaca Lancar)</option>
-                    <option value="mahir">Mahir (Menguasai Beberapa Kitab)</option>
-                  </select>
+                  <input
+                    type="text"
+                    value={LEVEL_LABELS[autoLevelKitab] || '-'}
+                    readOnly
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 outline-none"
+                  />
+                  <input type="hidden" name="kitabLevel" value={autoLevelKitab} />
                 </div>
               </div>
             </div>

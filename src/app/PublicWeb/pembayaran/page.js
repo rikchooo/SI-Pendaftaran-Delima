@@ -74,7 +74,26 @@ export default function PembayaranPage() {
         }
       };
 
+      const fetchBiaya = async () => {
+        try {
+          const settingsRes = await apiFetch('/api/settings');
+          let activeYear = new Date().getFullYear();
+          if (settingsRes.ok) {
+            const settingsData = await settingsRes.json();
+            activeYear = parseInt(settingsData.data?.active_year) || activeYear;
+          }
+          const biayaRes = await apiFetch(`/api/settings/biaya/${activeYear}`);
+          if (biayaRes.ok) {
+            const biayaData = await biayaRes.json();
+            setBiaya(biayaData.biaya || 0);
+          }
+        } catch (error) {
+          console.error("Failed to fetch biaya:", error);
+        }
+      };
+
       fetchPaymentStatus();
+      fetchBiaya();
     }
   }, [router]);
 
@@ -83,9 +102,9 @@ export default function PembayaranPage() {
     bank: "BSI (Bank Syariah Indonesia)",
     nomor: "7258945578",
     nama: "Yayasan Delima Tanjung Rejo",
-    nominal: "Rp 500.000",
     kodeBayar: "PSB-2026-001",
   };
+  const [biaya, setBiaya] = useState(0);
 
   // Cek status pembayaran dari localStorage
   const handleFileChange = (e) => {
@@ -339,7 +358,7 @@ export default function PembayaranPage() {
                       NOMINAL
                     </label>
                     <p className="font-bold text-xl text-gray-800">
-                      {rekeningInfo.nominal}
+                      {biaya ? `Rp ${biaya.toLocaleString("id-ID")}` : "Rp -"}
                     </p>
                   </div>
                   <div className="bg-gray-50 rounded-xl p-5 border border-gray-200">

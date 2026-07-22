@@ -29,6 +29,7 @@ const initialFormData = {
   penghasilanIbu: '',
   alamatIbu: '',
   telpIbu: '',
+  tahunPendaftaran: new Date().getFullYear().toString(),
 };
 
 const SANTRI_FORM_STORAGE_PREFIX = 'santri_form_data_';
@@ -306,6 +307,7 @@ export default function PendaftaranSantri() {
         body: JSON.stringify({
           email: userEmail,
           ...formData,
+          tahun_pendaftaran: formData.tahunPendaftaran,
           berkas: cloudinaryUrls,
         }),
       });
@@ -494,6 +496,19 @@ export default function PendaftaranSantri() {
                     onChange={handleChange} 
                     required 
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all duration-200 placeholder:text-gray-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tahun Pendaftaran
+                  </label>
+                  <input
+                    name="tahunPendaftaran"
+                    type="number"
+                    value={formData.tahunPendaftaran}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all duration-200"
                   />
                 </div>
 

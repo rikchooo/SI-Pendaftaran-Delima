@@ -10,6 +10,12 @@ import {
   HiCheckCircle,
   HiCurrencyDollar,
   HiInbox,
+  HiChartBar,
+  HiClipboard,
+  HiEye,
+  HiX,
+  HiClock,
+  HiCheck,
 } from "react-icons/hi";
 import "@/styles/globals.css";
 
@@ -21,6 +27,8 @@ export default function PengasuhDashboard() {
   const dropdownRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedSantri, setSelectedSantri] = useState(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -37,26 +45,13 @@ export default function PengasuhDashboard() {
           return;
         }
 
-        const regResponse = await apiFetch('/api/pendaftaran/santri');
-        if (!regResponse.ok)
-          throw new Error("Failed to fetch registration data");
-        const regResult = await regResponse.json();
+        const response = await apiFetch('/api/pengasuh/santri');
+        if (!response.ok) throw new Error("Failed to fetch data");
+        const result = await response.json();
 
-        const payResponse = await apiFetch('/api/pembayaran');
-        if (!payResponse.ok) throw new Error("Failed to fetch payment data");
-        const payResult = await payResponse.json();
-
-        const allRegistrations = regResult.data || [];
-        const allPayments = payResult.data || [];
-
-        const mappedData = allRegistrations.map((item) => {
-          const payment = allPayments.find(
-            (p) =>
-              p.id_pendaftaran &&
-              item.id_pendaftaran &&
-              p.id_pendaftaran.toString() === item.id_pendaftaran.toString(),
-          );
-
+        const mappedData = (result.data || []).map((item) => {
+          const levelAlquran = item.level_alquran || "-";
+          const levelKitab = item.level_kitab || "-";
           return {
             id: item.id_pendaftaran,
             name: item.nama_lengkap,
@@ -74,11 +69,17 @@ export default function PengasuhDashboard() {
             acceptedDate: item.created_at,
             room: "-",
             dormitory: "-",
-            paymentStatus: payment?.status_pembayaran || "belum",
-            paymentAmount: payment?.nominal ? parseInt(payment.nominal) : 0,
-            paymentDate: payment?.created_at || null,
-            quranLevel: "-",
-            kitabLevel: "-",
+            paymentStatus: item.pembayaran_status || "belum",
+            paymentAmount: item.nominal ? parseInt(item.nominal) : 0,
+            paymentDate: item.pembayaran_created_at || null,
+            paymentMethod: item.metode_pembayaran || "-",
+            paymentProof: item.bukti_pembayaran || "-",
+            quranScore: item.nilai_alquran || 0,
+            kitabScore: item.nilai_kitab || 0,
+            quranLevel: levelAlquran,
+            kitabLevel: levelKitab,
+            examNotes: item.catatan_penguji || "-",
+            examDate: item.nilai_created_at || "-",
             recommendedClass: "-",
             createdAt: item.created_at ? new Date(item.created_at) : new Date(),
           };
@@ -103,7 +104,6 @@ export default function PengasuhDashboard() {
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        // Dropdown handling (if implemented)
       }
     };
 
@@ -150,8 +150,46 @@ export default function PengasuhDashboard() {
         .length
     : 0;
   const sudahBayar = Array.isArray(santri)
-    ? santri.filter((s) => s.paymentStatus === "lunas").length
+    ? santri.filter((s) => s.paymentStatus === "lunas" || s.paymentStatus === "confirmed" || s.paymentStatus === "success").length
     : 0;
+  const sudahUji = Array.isArray(santri)
+    ? santri.filter((s) => s.quranScore > 0 || s.kitabScore > 0).length
+    : 0;
+
+  const getActivityStatus = (s) => {
+    const hasExam = s.quranScore > 0 || s.kitabScore > 0;
+    const isPaymentVerified = s.paymentStatus === "lunas" || s.paymentStatus === "confirmed" || s.paymentStatus === "success";
+    if (s.status === "completed" && hasExam && isPaymentVerified) return "completed";
+    if (hasExam) return "examined";
+    if (isPaymentVerified) return "paid";
+    if (s.status === "accepted" || s.status === "completed") return "accepted";
+    return "pending";
+  };
+
+  const getActivityLabel = (status) => {
+    switch (status) {
+      case "examined": return "Nilai telah dimasukkan";
+      case "paid": return "Pembayaran diverifikasi";
+      case "completed": return "Selesai";
+      case "accepted": return "Diterima";
+      default: return "Menunggu";
+    }
+  };
+
+  const getActivityIcon = (status) => {
+    switch (status) {
+      case "examined": return <HiClipboard className="w-5 h-5 text-blue-600" />;
+      case "paid": return <HiCurrencyDollar className="w-5 h-5 text-green-600" />;
+      case "completed": return <HiCheckCircle className="w-5 h-5 text-green-600" />;
+      case "accepted": return <HiCheck className="w-5 h-5 text-green-600" />;
+      default: return <HiClock className="w-5 h-5 text-yellow-600" />;
+    }
+  };
+
+  const openDetail = (s) => {
+    setSelectedSantri(s);
+    setIsDetailOpen(true);
+  };
 
   if (error) {
     return (
@@ -196,7 +234,7 @@ export default function PengasuhDashboard() {
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <section aria-labelledby="stats-heading" className="mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500 hover:shadow-xl transition-shadow">
               <div className="flex items-center justify-between">
                 <div>
@@ -218,7 +256,7 @@ export default function PengasuhDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-gray-600 text-sm font-medium">
-                    Pembayaran Santri Baru
+                    Pembayaran Sudah Dikonfirmasi
                   </p>
                   <p className="text-3xl font-bold text-green-600 mt-2">
                     {sudahBayar}
@@ -238,25 +276,110 @@ export default function PengasuhDashboard() {
                     Nilai Ujian Santri Baru
                   </p>
                   <p className="text-3xl font-bold text-gray-900 mt-2">
-                    {sudahSantri}
+                    {sudahUji}
                   </p>
                   <p className="text-sm text-gray-600 mt-1">
                     Santri sudah diuji
                   </p>
                 </div>
                 <div className="bg-purple-100 p-3 rounded-full">
-                  <HiCheckCircle className="w-8 h-8 text-purple-600" />
+                  <HiChartBar className="w-8 h-8 text-purple-600" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-yellow-500 hover:shadow-xl transition-shadow">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-600 text-sm font-medium">
+                    Diterima / Selesai
+                  </p>
+                  <p className="text-3xl font-bold text-yellow-600 mt-2">
+                    {sudahSantri}
+                  </p>
+                  <p className="text-sm text-gray-600 mt-1">Status aktif</p>
+                </div>
+                <div className="bg-yellow-100 p-3 rounded-full">
+                  <HiCheckCircle className="w-8 h-8 text-yellow-600" />
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        <section>
+        <section aria-labelledby="exam-results-heading" className="mb-8">
           <div className="bg-white rounded-xl shadow-lg overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">
-                Aktivitas Pendaftaran Santri Baru
+              <h3 id="exam-results-heading" className="text-lg font-semibold text-gray-900">
+                Hasil Pengujian Santri
+              </h3>
+            </div>
+            {paginatedSantri.length === 0 ? (
+              <div className="text-center py-12">
+                <HiInbox className="mx-auto h-12 w-12 text-gray-400" />
+                <h3 className="mt-2 text-sm font-medium text-gray-900">
+                  Tidak ada data
+                </h3>
+                <p className="mt-1 text-sm text-gray-500">
+                  Belum ada santri yang diuji
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 text-sm">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">No</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nilai Al-Quran</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Level Al-Quran</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nilai Kitab</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Level Kitab</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Catatan Penguji</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tanggal Pengujian</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {paginatedSantri.map((s, i) => {
+                      const actStatus = getActivityStatus(s);
+                      return (
+                        <tr key={s.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => openDetail(s)}>
+                          <td className="px-4 py-3 whitespace-nowrap">{(currentPage - 1) * itemsPerPage + i + 1}</td>
+                          <td className="px-4 py-3 whitespace-nowrap font-medium text-gray-900">{s.name}</td>
+                          <td className="px-4 py-3 whitespace-nowrap">{s.quranScore}</td>
+                          <td className="px-4 py-3 whitespace-nowrap capitalize">{s.quranLevel}</td>
+                          <td className="px-4 py-3 whitespace-nowrap">{s.kitabScore}</td>
+                          <td className="px-4 py-3 whitespace-nowrap capitalize">{s.kitabLevel}</td>
+                          <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-600 max-w-[200px] truncate">{s.examNotes}</td>
+                          <td className="px-4 py-3 whitespace-nowrap text-xs">{s.examDate !== '-' ? new Date(s.examDate).toLocaleDateString("id-ID") : '-'}</td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full ${
+                              actStatus === "completed" ? "bg-green-100 text-green-800" :
+                              actStatus === "examined" ? "bg-blue-100 text-blue-800" :
+                              actStatus === "paid" ? "bg-green-100 text-green-800" :
+                              actStatus === "accepted" ? "bg-yellow-100 text-yellow-800" :
+                              "bg-gray-100 text-gray-800"
+                            }`}>
+                              {getActivityIcon(actStatus)}
+                              {getActivityLabel(actStatus)}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </section>
+
+        <section aria-labelledby="activity-heading">
+          <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h3 id="activity-heading" className="text-lg font-semibold text-gray-900">
+                Aktivitas Santri Baru
               </h3>
             </div>
             {paginatedSantri.length === 0 ? (
@@ -271,51 +394,143 @@ export default function PengasuhDashboard() {
               </div>
             ) : (
               <div className="divide-y divide-gray-200">
-                {paginatedSantri.slice(0, 5).map((s) => (
-                  <div
-                    key={s.id}
-                    className="p-4 hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                            <HiCheckCircle className="w-5 h-5 text-green-600" />
-                          </div>
-                          <div>
-                            <p className="font-medium text-gray-900">
-                              {s.name}
-                            </p>
-                            <p className="text-sm text-gray-500">{s.address}</p>
+                {paginatedSantri.slice(0, 5).map((s) => {
+                  const actStatus = getActivityStatus(s);
+                  return (
+                    <div
+                      key={s.id}
+                      className="p-4 hover:bg-gray-50 transition-colors cursor-pointer"
+                      onClick={() => openDetail(s)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                              actStatus === 'completed' ? 'bg-green-100' : 
+                              actStatus === 'examined' ? 'bg-blue-100' :
+                              actStatus === 'paid' ? 'bg-green-100' :
+                              actStatus === 'accepted' ? 'bg-yellow-100' : 
+                              'bg-gray-100'
+                            }`}>
+                              {getActivityIcon(actStatus)}
+                            </div>
+                            <div>
+                              <p className="font-medium text-gray-900">
+                                {s.name}
+                              </p>
+                              <p className="text-sm text-gray-500">{getActivityLabel(actStatus)}</p>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm text-gray-500">
-                          {s.createdAt
-                            ? new Date(s.createdAt).toLocaleDateString("id-ID")
-                            : "-"}
-                        </p>
-                        <span
-                          className={`inline-block px-2 py-1 text-xs rounded-full ${
-                            s.status === "accepted" || s.status === "completed"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-yellow-100 text-yellow-800"
-                          }`}
-                        >
-                          {s.status === "accepted" || s.status === "completed"
-                            ? "Diterima"
-                            : "Menunggu"}
-                        </span>
+                        <div className="text-right">
+                          <p className="text-sm text-gray-500">
+                            {s.createdAt
+                              ? new Date(s.createdAt).toLocaleDateString("id-ID")
+                              : "-"}
+                          </p>
+                          <span
+                            className={`inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full ${
+                              actStatus === "completed" ? "bg-green-100 text-green-800" :
+                              actStatus === "examined" ? "bg-blue-100 text-blue-800" :
+                              actStatus === "paid" ? "bg-green-100 text-green-800" :
+                              actStatus === "accepted" ? "bg-yellow-100 text-yellow-800" :
+                              "bg-gray-100 text-gray-800"
+                            }`}
+                          >
+                            {getActivityLabel(actStatus)}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
         </section>
       </main>
+
+      {isDetailOpen && selectedSantri && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-3xl bg-white rounded-xl shadow-xl overflow-hidden max-h-[90vh] overflow-y-auto">
+            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white z-10">
+              <h3 className="text-lg font-semibold text-gray-900">Detail Santri</h3>
+              <button onClick={() => setIsDetailOpen(false)} className="p-2 hover:bg-gray-100 rounded-full">
+                <HiX className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+            <div className="p-6 space-y-6">
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-2">Data Santri</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                  <div><span className="text-gray-500">Nama:</span> <span className="font-medium">{selectedSantri.name}</span></div>
+                  <div><span className="text-gray-500">Email:</span> <span className="font-medium">{selectedSantri.email}</span></div>
+                  <div><span className="text-gray-500">Alamat:</span> <span className="font-medium">{selectedSantri.address}</span></div>
+                  <div><span className="text-gray-500">Sekolah:</span> <span className="font-medium">{selectedSantri.school}</span></div>
+                </div>
+              </div>
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-2">Data Orang Tua</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                  <div><span className="text-gray-500">Ayah:</span> <span className="font-medium">{selectedSantri.parentAyah}</span></div>
+                  <div><span className="text-gray-500">Ibu:</span> <span className="font-medium">{selectedSantri.parentIbu}</span></div>
+                  <div><span className="text-gray-500">HP Ayah:</span> <span className="font-medium">{selectedSantri.parentAyahPhone}</span></div>
+                  <div><span className="text-gray-500">HP Ibu:</span> <span className="font-medium">{selectedSantri.parentIbuPhone}</span></div>
+                </div>
+              </div>
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-2">Hasil Pendaftaran</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                  <div><span className="text-gray-500">Status:</span> <span className="font-medium capitalize">{selectedSantri.status}</span></div>
+                  <div><span className="text-gray-500">Tanggal Daftar:</span> <span className="font-medium">{selectedSantri.acceptedDate ? new Date(selectedSantri.acceptedDate).toLocaleDateString("id-ID") : '-'}</span></div>
+                </div>
+              </div>
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-2">Data Pembayaran</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                  <div><span className="text-gray-500">Status:</span> <span className="font-medium capitalize">{selectedSantri.paymentStatus}</span></div>
+                  <div><span className="text-gray-500">Nominal:</span> <span className="font-medium">Rp {selectedSantri.paymentAmount ? selectedSantri.paymentAmount.toLocaleString("id-ID") : '-'}</span></div>
+                  <div><span className="text-gray-500">Metode:</span> <span className="font-medium">{selectedSantri.paymentMethod}</span></div>
+                  <div><span className="text-gray-500">Tanggal:</span> <span className="font-medium">{selectedSantri.paymentDate ? new Date(selectedSantri.paymentDate).toLocaleDateString("id-ID") : '-'}</span></div>
+                  {selectedSantri.paymentProof && selectedSantri.paymentProof !== "-" && (
+                    <div className="md:col-span-2">
+                      <span className="text-gray-500">Bukti Pembayaran:</span>{" "}
+                      <a href={selectedSantri.paymentProof} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                        Lihat Bukti
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-2">Hasil Pengujian</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                  <div><span className="text-gray-500">Nilai Al-Quran:</span> <span className="font-medium">{selectedSantri.quranScore}</span></div>
+                  <div><span className="text-gray-500">Level Al-Quran:</span> <span className="font-medium capitalize">{selectedSantri.quranLevel}</span></div>
+                  <div><span className="text-gray-500">Nilai Kitab:</span> <span className="font-medium">{selectedSantri.kitabScore}</span></div>
+                  <div><span className="text-gray-500">Level Kitab:</span> <span className="font-medium capitalize">{selectedSantri.kitabLevel}</span></div>
+                  <div className="md:col-span-2"><span className="text-gray-500">Catatan Penguji:</span> <span className="font-medium">{selectedSantri.examNotes}</span></div>
+                  <div><span className="text-gray-500">Tanggal Pengujian:</span> <span className="font-medium">{selectedSantri.examDate !== '-' ? new Date(selectedSantri.examDate).toLocaleDateString("id-ID") : '-'}</span></div>
+                </div>
+              </div>
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-2">Riwayat Status</h4>
+                <div className="flex items-center gap-2 text-sm">
+                  <span className={`px-2 py-1 rounded-full ${selectedSantri.status === 'accepted' || selectedSantri.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                    {selectedSantri.status === 'accepted' || selectedSantri.status === 'completed' ? 'Diterima' : 'Menunggu'}
+                  </span>
+                  <span className={`px-2 py-1 rounded-full ${['lunas','confirmed','success'].includes(selectedSantri.paymentStatus) ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                    {['lunas','confirmed','success'].includes(selectedSantri.paymentStatus) ? 'Lunas' : selectedSantri.paymentStatus}
+                  </span>
+                  {(selectedSantri.quranScore > 0 || selectedSantri.kitabScore > 0) && (
+                    <span className="px-2 py-1 rounded-full bg-blue-100 text-blue-800">Sudah Diuji</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

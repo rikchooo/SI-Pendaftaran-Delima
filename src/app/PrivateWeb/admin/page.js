@@ -5,7 +5,7 @@ import { apiFetch } from "@/lib/api";
 import { getAuthToken, getPrivateSession } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 import PrivateHeader from "@/components/PrivateHeader";
-import { HiUsers, HiClock, HiCheckCircle, HiXCircle, HiSearch, HiPrinter, HiChevronDown, HiTrendingUp, HiExclamation, HiEye, HiCheck, HiX, HiSave } from "react-icons/hi";
+import { HiUsers, HiClock, HiCheckCircle, HiXCircle, HiSearch, HiPrinter, HiChevronDown, HiTrendingUp, HiExclamation, HiEye, HiCheck, HiX, HiSave, HiCog } from "react-icons/hi";
 
 const REGISTRATION_SCHEDULE_KEY = "registration_schedule";
 
@@ -443,9 +443,18 @@ export default function AdminDashboard() {
                     )}
                   </div>
 
-                  <div className="hidden sm:flex items-center gap-2 ml-auto">
-                    <button
-                      onClick={() => setIsScheduleModalOpen(true)}
+                   <div className="hidden sm:flex items-center gap-2 ml-auto">
+                     <button
+                       onClick={() => router.push('/PrivateWeb/admin/setting')}
+                       className="flex items-center justify-center px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium min-w-[120px]"
+                       title="Pengaturan"
+                     >
+                       <HiCog className="w-4 h-4 mr-2" />
+                       Setting
+                     </button>
+
+                     <button
+                       onClick={() => setIsScheduleModalOpen(true)}
                       className="flex items-center justify-center px-4 py-2 bg-white text-green-700 border border-green-300 rounded-lg hover:bg-green-50 transition-colors text-sm font-medium min-w-[120px]"
                       title="Ubah Tanggal Pendaftaran"
                     >
@@ -464,6 +473,15 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="sm:hidden mt-3 grid grid-cols-1 gap-2">
+                  <button
+                    onClick={() => router.push('/PrivateWeb/admin/setting')}
+                    className="w-full px-4 py-2.5 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium flex items-center justify-center"
+                    title="Pengaturan"
+                  >
+                    <HiCog className="w-4 h-4 mr-2" />
+                    Setting
+                  </button>
+
                   <button
                     onClick={() => setIsScheduleModalOpen(true)}
                     className="w-full px-4 py-2.5 bg-white text-green-700 rounded-lg hover:bg-green-50 transition-colors font-medium flex items-center justify-center"

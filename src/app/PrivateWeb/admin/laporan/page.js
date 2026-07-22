@@ -8,12 +8,11 @@ import Image from "next/image";
 import "@/styles/globals.css";
 
 export default function LaporanPage() {
-  // State untuk data santri, error, dan router
   const [santri, setSantri] = useState([]);
   const [error, setError] = useState(null);
+  const [settings, setSettings] = useState({});
   const router = useRouter();
 
-  // Data kop surat
   const kopSurat = {
     nama: "PONDOK PESANTREN DELIMA TJR CANGKRENG",
     arab: "المعْهد الدّيْنى دليْما تنْجُنا رَجاء",
@@ -23,7 +22,6 @@ export default function LaporanPage() {
   };
 
   useEffect(() => {
-    // Fungsi untuk mengambil data santri dari backend
     const fetchData = async () => {
       try {
         if (!getAuthToken()) {
@@ -37,12 +35,22 @@ export default function LaporanPage() {
           return;
         }
 
-        // Fetch data santri yang diterima
-        const res = await apiFetch('/api/pendaftaran/santri');
-        const result = await res.json();
+        const [settingsRes, santriRes] = await Promise.all([
+          apiFetch('/api/settings'),
+          apiFetch('/api/pendaftaran/santri'),
+        ]);
 
-        // Filter dan format data santri yang diterima
-        const data = (result.data || [])
+        if (settingsRes.ok) {
+          const settingsData = await settingsRes.json();
+          setSettings(settingsData.data || {});
+        }
+
+        if (!santriRes.ok) {
+          throw new Error('Failed to fetch santri data');
+        }
+        const santriResult = await santriRes.json();
+
+        const data = (santriResult.data || [])
           .filter((x) => x.status === "accepted" || x.status === "completed")
           .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
           .map((item, i) => ({
@@ -67,12 +75,10 @@ export default function LaporanPage() {
     fetchData();
   }, [router]);
 
-  // Fungsi tombol cetak
   const handlePrint = () => {
     window.print();
   };
 
-  // Fungsi tombol kembali
   const handleBack = () => {
     if (window.history.length > 1) {
       router.back();
@@ -82,6 +88,10 @@ export default function LaporanPage() {
   };
 
   if (error) return <div>Error: {error}</div>;
+
+  const currentYear = settings.active_year || new Date().getFullYear();
+  const namaPanitia = settings.panitia_nama || "Nama Panitia";
+  const jabatanPanitia = settings.panitia_jabatan || "Panitia PSB";
 
   return (
     <div className="report-page-wrapper">
@@ -152,6 +162,7 @@ export default function LaporanPage() {
           <h2 className="font-bold text-[14px]">
             LAPORAN PENDAFTARAN SANTRI BARU
           </h2>
+          <p className="text-xs text-gray-600">Tahun Ajaran {currentYear}/{String(currentYear + 1).slice(-2)}</p>
         </div>
 
         <table className="w-full border border-black text-[11px] border-collapse">
@@ -196,6 +207,16 @@ export default function LaporanPage() {
             )}
           </tbody>
         </table>
+
+        <div className="mt-8 flex justify-end">
+          <div className="text-center w-64">
+            <p>Situbondo, {new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}</p>
+            <div className="mt-8 mb-16">
+              <p className="font-medium underline">{namaPanitia}</p>
+              <p className="text-xs text-gray-600">{jabatanPanitia}</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
